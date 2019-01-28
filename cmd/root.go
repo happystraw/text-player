@@ -43,8 +43,8 @@ var cfgFile string
 var rootCmd = &cobra.Command{
 	Version: "0.0.1",
 	Use:     "text-player",
-	Short:   "Text Player is a text-to-speech and play-to-speech gadget.",
-	Long:    logo + "Text Player is a text-to-speech and play-to-speech gadget.",
+	Short:   "Text Player is a small tool for converting text to speech and playing speech.",
+	Long:    logo + "Text Player is a small tool for converting text to speech and playing speech.",
 
 	// Uncomment the following line if your bare application
 	// has an action associated with it:

@@ -1,6 +1,6 @@
 # Text Player
 
-> A text-to-speech and play-to-speech gadget which base on [讯飞在线语音合成(Xunfei online tts web api)](https://www.xfyun.cn/services/online_tts).
+> A Small Tool for Converting Text to Speech and Playing Speech Based on Xunfei Web Api [讯飞在线语音合成(Xunfei online tts web api)](https://www.xfyun.cn/services/online_tts).
 
 ## Platforms
 
@@ -34,7 +34,7 @@ go get -u github.com/happystraw/text-player
   ./text-player config --appid 'your xunfei api appid' --apikey 'your xunfei api apikey'
   ```
 
-### Run in console
+### Run in command line
 
 ```bash
 ./text-player play "小明同学, 早上好"
@@ -55,9 +55,9 @@ go get -u github.com/happystraw/text-player
 #
 # Content-Disposition: form-data; name="msg"
 #
-# 小明同学, 早上好
+# Hello, China
 # ------WebKitFormBoundary7MA4YWxkTrZu0gW--
-curl -d "msg=小明同学, 早上好" localhost:8888
+curl -d "msg=Hello, China" localhost:8888
 ```
 
 ## Usages
@@ -73,7 +73,7 @@ curl -d "msg=小明同学, 早上好" localhost:8888
    / / / -_) \ / __/ ___/ / _ `/ // / -_) __/
   /_/  \__/_\_\\__/_/  /_/\_,_/\_, /\__/_/
                               /___/
-  Text Player is a text-to-speech and play-to-speech gadget.
+  Text Player is a Small Tool for Converting Text to Speech and Playing Speech.
 
   Usage:
     text-player [command]
