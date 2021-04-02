@@ -30,12 +30,14 @@ var configOption = struct {
 	CachePath    string
 	DisableCache bool
 	AppID        string
-	APIKey       string
+	ApiKey       string
+	ApiSecret    string
 }{
 	CachePath:    "",
 	DisableCache: false,
 	AppID:        "",
-	APIKey:       "",
+	ApiKey:       "",
+	ApiSecret:    "",
 }
 
 // configCmd represents the config command
@@ -62,22 +64,32 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&configOption.CachePath, "cache-path", "o", "", "path for cache files(default is $HOME/.text-player)")
 	rootCmd.PersistentFlags().BoolVarP(&configOption.DisableCache, "disable-cache", "n", false, "disable cache generated speech files")
 	rootCmd.PersistentFlags().StringVarP(&configOption.AppID, "appid", "", "", "xunfei tts api auth appid")
-	rootCmd.PersistentFlags().StringVarP(&configOption.APIKey, "apikey", "", "", "xunfei tts api auth apikey")
+	rootCmd.PersistentFlags().StringVarP(&configOption.ApiKey, "apikey", "", "", "xunfei tts api auth apikey")
+	rootCmd.PersistentFlags().StringVarP(&configOption.ApiSecret, "apisecret", "", "", "xunfei tts api auth apisecret")
 
 	configCmd.Flags().BoolVarP(&isReset, "reset", "", false, "reset all to default settings")
 }
 
 func initDefaultConfig() {
-	viper.SetDefault("version", "0.0.1")
+	viper.SetDefault("version", rootCmd.Version)
 	viper.SetDefault("cache-path", "")
 	viper.SetDefault("disable-cache", false)
-	viper.SetDefault("xunfei.host", "http://api.xfyun.cn/v1/service/v1/tts")
+	viper.SetDefault("xunfei.host", "wss://tts-api.xfyun.cn/v2/tts")
 	viper.SetDefault("xunfei.appid", "")
 	viper.SetDefault("xunfei.apikey", "")
+	viper.SetDefault("xunfei.apisecret", "")
 	viper.SetDefault("xunfei.params", map[string]string{
-		"voice_name": "xiaoyan",
+		"aue": "raw",
+		"vcn": "xiaoyan",
+		"auf": "audio/L16;rate=16000",
+		"tte": "UTF8",
 	})
-
+	viper.SetDefault("player.params", map[string]int{
+		"rate":      16000,
+		"chan-num":  1,
+		"bit-depth": 2,
+		"buff-size": 1024,
+	})
 }
 
 func createDefaultConfigIfNotExists(filename string) error {
@@ -86,11 +98,10 @@ func createDefaultConfigIfNotExists(filename string) error {
 	}
 
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	defer file.Close()
-
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	return viper.WriteConfig()
 }
@@ -142,8 +153,11 @@ func bindFlagsValueToConfig() {
 	if configOption.AppID != "" {
 		viper.Set("xunfei.appid", configOption.AppID)
 	}
-	if configOption.APIKey != "" {
-		viper.Set("xunfei.apikey", configOption.APIKey)
+	if configOption.ApiKey != "" {
+		viper.Set("xunfei.apikey", configOption.ApiKey)
+	}
+	if configOption.ApiSecret != "" {
+		viper.Set("xunfei.apisecret", configOption.ApiSecret)
 	}
 }
 

@@ -49,7 +49,7 @@ func clean() error {
 		return err
 	}
 	if !dir.IsDir() {
-		return fmt.Errorf("Error: cache file [%s] must be a directory, not a file", path)
+		return fmt.Errorf("error: cache file [%s] must be a directory, not a file", path)
 	}
 
 	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {

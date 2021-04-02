@@ -29,7 +29,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const extension = "wav"
+const extension = "pcm"
 
 // playCmd represents the play command
 var playCmd = &cobra.Command{
@@ -77,7 +77,7 @@ func useCacheFile(msg string) (string, error) {
 	if file, err := os.Stat(filename); os.IsNotExist(err) {
 		return "", nil
 	} else if file.IsDir() {
-		return "", fmt.Errorf("Error: cache file [%s] must be a directory, not a file", filename)
+		return "", fmt.Errorf("error: cache file [%s] must be a directory, not a file", filename)
 	}
 
 	return filename, nil
@@ -99,13 +99,10 @@ func playRemote(msg string) error {
 		viper.GetString("xunfei.host"),
 		viper.GetString("xunfei.appid"),
 		viper.GetString("xunfei.apikey"),
+		viper.GetString("xunfei.apisecret"),
 	)
-	params := viper.GetStringMapString("xunfei.params")
-	// got wav / pcm audio
-	params["aue"] = "raw"
-	params["auf"] = "audio/L16;rate=16000"
 
-	raw, err := xunfei.Create(msg, params)
+	raw, err := xunfei.Create(msg)
 
 	if err != nil {
 		return err
@@ -119,10 +116,19 @@ func playRemote(msg string) error {
 }
 
 func play(r io.ReadCloser) error {
-	player, err := oto.NewPlayer(16000, 1, 2, 1024)
+	ctx, err := oto.NewContext(
+		viper.GetInt("player.params.rate"),
+		viper.GetInt("player.params.chan-num"),
+		viper.GetInt("player.params.bit-depth"),
+		viper.GetInt("player.params.buff-size"),
+	)
 	if err != nil {
 		return err
 	}
+	defer ctx.Close()
+
+	player := ctx.NewPlayer()
+
 	defer player.Close()
 
 	if _, err := io.Copy(player, r); err != nil {

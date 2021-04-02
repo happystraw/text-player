@@ -1,3 +1,5 @@
 .vscode
 .idea
 .svn
+.DS_Store
+text-player

@@ -38,7 +38,7 @@ var serveCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
-	serveCmd.Flags().StringVarP(&serveFlags.Port, "port", "p", "8888", "port to listen to on the web server")
+	serveCmd.Flags().StringVarP(&serveFlags.Port, "port", "p", "8888", "port to listen on")
 }
 
 func startServer() {

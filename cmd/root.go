@@ -41,7 +41,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: "0.0.1",
+	Version: "0.2.0",
 	Use:     "text-player",
 	Short:   "Text Player is a small tool for converting text to speech and playing speech.",
 	Long:    logo + "Text Player is a small tool for converting text to speech and playing speech.",
@@ -110,16 +110,16 @@ func initConfig() {
 	bindFlagsValueToConfig()
 }
 
-func isRunningInConsole() bool {
+func IsRunningInConsole() bool {
 	return runningEnv == runningInConsole
 }
 
-func isRunningInServer() bool {
+func IsRunningInServer() bool {
 	return runningEnv == runningInServer
 }
 
 func record(v ...interface{}) {
-	if isRunningInServer() {
+	if IsRunningInServer() {
 		log.Println(v...)
 	} else {
 		fmt.Println(v...)
@@ -127,7 +127,7 @@ func record(v ...interface{}) {
 }
 
 func recordf(format string, a ...interface{}) {
-	if isRunningInServer() {
+	if IsRunningInServer() {
 		log.Printf(format, a...)
 	} else {
 		fmt.Printf(format, a...)
