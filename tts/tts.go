@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -15,10 +16,9 @@ import (
 )
 
 const (
-	STATUS_FIRST_FRAME       = 0
-	STATUS_CONTINUE_FRAME    = 1
-	STATUS_LAST_FRAME        = 2
-	HttpCodeSuccessHandshake = 101
+	STATUS_FIRST_FRAME    = 0
+	STATUS_CONTINUE_FRAME = 1
+	STATUS_LAST_FRAME     = 2
 )
 
 // XunfeiTts Xunfei tts struct
@@ -57,7 +57,7 @@ func New(host, appid, apiKey, apiSecret string) *XunfeiTts {
 	}
 }
 
-// Create 请求讯飞接口生层语音合成文件
+// Create raw audio data from tts server
 func (tts *XunfeiTts) Create(msg string) ([]byte, error) {
 	conn, err := dial(tts.Host, tts.ApiKey, tts.ApiSecret)
 	if err != nil {
@@ -116,7 +116,7 @@ func fetch(conn *websocket.Conn) ([]byte, bool, error) {
 		return nil, false, err
 	}
 
-	return data, resp.Data.Status == 2, nil
+	return data, resp.Data.Status == STATUS_LAST_FRAME, nil
 }
 
 // dial connect tts websocket server
@@ -126,7 +126,7 @@ func dial(host, apiKey, apiSecret string) (*websocket.Conn, error) {
 		return conn, err
 	}
 
-	if resp.StatusCode != HttpCodeSuccessHandshake {
+	if resp.StatusCode != http.StatusSwitchingProtocols {
 		b, _ := ioutil.ReadAll(resp.Body)
 		return nil, fmt.Errorf("handshake failed:message=%s,httpCode=%d", string(b), resp.StatusCode)
 	}
@@ -141,8 +141,8 @@ func assembleAuthUrl(host string, apiKey, apiSecret string) string {
 	}
 	date := time.Now().UTC().Format(time.RFC1123)
 	signString := []string{"host: " + ul.Host, "date: " + date, "GET " + ul.Path + " HTTP/1.1"}
-	sgin := strings.Join(signString, "\n")
-	sha := HmacWithShaTobase64("hmac-sha256", sgin, apiSecret)
+	sign := strings.Join(signString, "\n")
+	sha := HmacWithShaTobase64("hmac-sha256", sign, apiSecret)
 	authUrl := fmt.Sprintf("hmac username=\"%s\", algorithm=\"%s\", headers=\"%s\", signature=\"%s\"", apiKey,
 		"hmac-sha256", "host date request-line", sha)
 	authorization := base64.StdEncoding.EncodeToString([]byte(authUrl))
