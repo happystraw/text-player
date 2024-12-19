@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/happystraw/text-player/cmd"
+import "github.com/happystraw/text-player/internal/cmd"
 
 func main() {
 	cmd.Execute()

@@ -10,7 +10,7 @@
 ## Installing
 
 ```bash
-go get -u github.com/happystraw/text-player
+go install -v github.com/happystraw/text-player@latest
 ```
 
 ## Getting Started
@@ -22,20 +22,20 @@ go get -u github.com/happystraw/text-player
 - Set the `APPID` , `APIKey` and `APISecret` of Xunfei online tts web api to default configuration for Text Player.
 
   ```bash
-  ./text-player config --appid 'your appid' --apikey 'your apikey' --apisecret 'your apisecret'
+  text-player config --appid 'your appid' --apikey 'your apikey' --apisecret 'your apisecret'
   ```
 
 ### Run in command line
 
 ```bash
-./text-player play "富强、民主、文明、和谐、自由、平等、公正、法治、爱国、敬业、诚信、友善"
+text-player play "富强、民主、文明、和谐、自由、平等、公正、法治、爱国、敬业、诚信、友善"
 ```
 
 ### Run in server
 
 ```bash
 # default listen at localhost:8888
-./text-player serve
+text-player serve
 ```
 
 **Test**

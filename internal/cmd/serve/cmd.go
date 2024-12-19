@@ -12,55 +12,61 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package serve
 
 import (
+	"fmt"
+	"github.com/happystraw/text-player/internal/cmd/play"
+	"log/slog"
 	"net/http"
 
 	"github.com/spf13/cobra"
 )
 
 var serveFlags = struct {
-	Port string
+	Port int
 }{
-	Port: "8888",
+	Port: 8888,
 }
 
-// serveCmd represents the serve command
-var serveCmd = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Run on server",
 	Long:  "Run on server, play the value of the `msg` field of the POST request form",
-	Run: func(cmd *cobra.Command, args []string) {
-		startServer()
-	},
+	RunE:  run,
 }
 
 func init() {
-	rootCmd.AddCommand(serveCmd)
-	serveCmd.Flags().StringVarP(&serveFlags.Port, "port", "p", "8888", "port to listen on")
+	Cmd.Flags().IntVarP(&serveFlags.Port, "port", "p", 8888, "port to listen on")
 }
 
-func startServer() {
-	runningEnv = runningInServer
-	recordf("Ready on http://localhost:%s \n", serveFlags.Port)
-	http.HandleFunc("/", playInServer)
-	err := http.ListenAndServe(":"+serveFlags.Port, nil)
-	if err != nil {
-		panic(err)
+func run(*cobra.Command, []string) error {
+	if err := startServer(); err != nil {
+		return fmt.Errorf("start server error: %s", err)
 	}
+	return nil
+}
+
+func startServer() error {
+	slog.Info(fmt.Sprintf("Starting server on: http://localhost:%d", serveFlags.Port))
+	http.HandleFunc("/", playInServer)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", serveFlags.Port), nil); err != nil {
+
+		return err
+	}
+	return nil
 }
 
 func playInServer(w http.ResponseWriter, r *http.Request) {
 	msg := r.PostFormValue("msg")
 	if len(msg) > 1 {
-		recordf("Got message: [%s] .\n", msg)
-		if err := Play(msg); err != nil {
-			record("Fail: ", err)
+		slog.Info(fmt.Sprintf("Got message: %s", msg))
+		if err := play.Play(msg); err != nil {
 			w.Write([]byte("Fail"))
+			slog.Info(fmt.Sprintf("Fail: %s", err))
 		} else {
 			w.Write([]byte("OK"))
-			record("Success")
+			slog.Info("Success")
 		}
 	} else {
 		w.Write([]byte("No message"))

@@ -5,61 +5,52 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"github.com/happystraw/text-player/internal/config"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/spf13/viper"
 )
+
+type StatusFrame = int
 
 const (
-	STATUS_FIRST_FRAME    = 0
-	STATUS_CONTINUE_FRAME = 1
-	STATUS_LAST_FRAME     = 2
+	StatusFirstFrame StatusFrame = iota
+	StatusContinueFrame
+	StatusLastFrame
 )
 
-// XunfeiTts Xunfei tts struct
-type XunfeiTts struct {
-	Host      string
-	AppID     string
-	ApiKey    string
-	ApiSecret string
+type Tts interface {
+	Create(msg string) ([]byte, error)
 }
 
-// BaseTts interface
-type BaseTts interface {
-	Create(msg string, params map[string]string) ([]byte, error)
+type XunFeiTts struct {
+	cfg *config.Tts
 }
 
-type RespData struct {
-	Sid     string `json:"sid"`
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Data    Data   `json:"data"`
+type Response struct {
+	Sid     string       `json:"sid"`
+	Code    int          `json:"code"`
+	Message string       `json:"message"`
+	Data    ResponseData `json:"data"`
 }
 
-type Data struct {
+type ResponseData struct {
 	Audio  string `json:"audio"`
 	Ced    string `json:"ced"`
 	Status int    `json:"status"`
 }
 
-// New a xunfei tts instance
-func New(host, appid, apiKey, apiSecret string) *XunfeiTts {
-	return &XunfeiTts{
-		Host:      host,
-		AppID:     appid,
-		ApiKey:    apiKey,
-		ApiSecret: apiSecret,
-	}
+func New(cfg *config.Tts) Tts {
+	return &XunFeiTts{cfg: cfg}
 }
 
 // Create raw audio data from tts server
-func (tts *XunfeiTts) Create(msg string) ([]byte, error) {
-	conn, err := dial(tts.Host, tts.ApiKey, tts.ApiSecret)
+func (t *XunFeiTts) Create(msg string) ([]byte, error) {
+	conn, err := dial(t.cfg.Host, t.cfg.ApiKey, t.cfg.ApiSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +58,9 @@ func (tts *XunfeiTts) Create(msg string) ([]byte, error) {
 
 	params := map[string]interface{}{
 		"common": map[string]string{
-			"app_id": tts.AppID,
+			"app_id": t.cfg.AppId,
 		},
-		"business": viper.GetStringMap("xunfei.params"),
+		"business": t.cfg.Params,
 		"data": map[string]interface{}{
 			"status": 2,
 			"text":   base64.StdEncoding.EncodeToString([]byte(msg)),
@@ -81,7 +72,7 @@ func (tts *XunfeiTts) Create(msg string) ([]byte, error) {
 		return nil, err
 	}
 
-	data := []byte{}
+	var data []byte
 	for {
 		tmp, ok, err := fetch(conn)
 		if err != nil {
@@ -97,7 +88,7 @@ func (tts *XunfeiTts) Create(msg string) ([]byte, error) {
 }
 
 func fetch(conn *websocket.Conn) ([]byte, bool, error) {
-	resp := RespData{}
+	resp := Response{}
 	err := conn.ReadJSON(&resp)
 	if err != nil {
 		return nil, false, err
@@ -116,7 +107,7 @@ func fetch(conn *websocket.Conn) ([]byte, bool, error) {
 		return nil, false, err
 	}
 
-	return data, resp.Data.Status == STATUS_LAST_FRAME, nil
+	return data, resp.Data.Status == StatusLastFrame, nil
 }
 
 // dial connect tts websocket server
@@ -127,7 +118,7 @@ func dial(host, apiKey, apiSecret string) (*websocket.Conn, error) {
 	}
 
 	if resp.StatusCode != http.StatusSwitchingProtocols {
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("handshake failed:message=%s,httpCode=%d", string(b), resp.StatusCode)
 	}
 
@@ -142,7 +133,7 @@ func assembleAuthUrl(host string, apiKey, apiSecret string) string {
 	date := time.Now().UTC().Format(time.RFC1123)
 	signString := []string{"host: " + ul.Host, "date: " + date, "GET " + ul.Path + " HTTP/1.1"}
 	sign := strings.Join(signString, "\n")
-	sha := HmacWithShaTobase64("hmac-sha256", sign, apiSecret)
+	sha := HmacWithShaToBase64(sign, apiSecret)
 	authUrl := fmt.Sprintf("hmac username=\"%s\", algorithm=\"%s\", headers=\"%s\", signature=\"%s\"", apiKey,
 		"hmac-sha256", "host date request-line", sha)
 	authorization := base64.StdEncoding.EncodeToString([]byte(authUrl))
@@ -156,7 +147,7 @@ func assembleAuthUrl(host string, apiKey, apiSecret string) string {
 	return callurl
 }
 
-func HmacWithShaTobase64(algorithm, data, key string) string {
+func HmacWithShaToBase64(data, key string) string {
 	mac := hmac.New(sha256.New, []byte(key))
 	mac.Write([]byte(data))
 	encodeData := mac.Sum(nil)

@@ -12,38 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package clean
 
 import (
 	"fmt"
+	"github.com/happystraw/text-player/internal/cmd/config"
+	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
-	"strings"
-
-	"github.com/spf13/cobra"
 )
 
-// cleanCmd represents the clean command
-var cleanCmd = &cobra.Command{
+var Cmd = &cobra.Command{
 	Use:   "clean",
-	Short: "Erase generated files",
-	Run: func(cmd *cobra.Command, args []string) {
-		if err := clean(); err != nil {
-			record(err)
-			os.Exit(1)
-		}
-	},
+	Short: "Delete generated files",
+	RunE:  run,
 }
 
-func init() {
-	rootCmd.AddCommand(cleanCmd)
+func run(*cobra.Command, []string) error {
+	if err := clean(); err != nil {
+		return fmt.Errorf("clean error: %s", err)
+	}
+	fmt.Println("clean done")
+	return nil
 }
 
 func clean() error {
-	path, err := getCachePath()
-	if err != nil {
-		return err
-	}
+	cfg := config.GetConfig()
+	path := cfg.GetCachePath()
 	dir, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -53,12 +48,10 @@ func clean() error {
 	}
 
 	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		name := info.Name()
-		dotIndex := strings.LastIndex(name, ".")
-		if dotIndex < 2 {
-			return nil
+		if err != nil {
+			return err
 		}
-		if ext := name[dotIndex+1:]; ext != extension {
+		if info.IsDir() {
 			return nil
 		}
 		return os.Remove(path)
