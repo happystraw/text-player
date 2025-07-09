@@ -16,7 +16,8 @@ package config
 
 import (
 	"fmt"
-	C "github.com/happystraw/text-player/internal/config"
+
+	Cfg "github.com/happystraw/text-player/internal/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -24,7 +25,7 @@ import (
 
 var version = "0.3.0"
 
-var cfg *C.Config
+var cfg *Cfg.Config
 
 type options struct {
 	// Global Persistent flags
@@ -80,10 +81,10 @@ func run(cmd *cobra.Command, _ []string) error {
 }
 
 func reset(v string) error {
-	return save(v, C.GetDefaultConfig())
+	return save(v, Cfg.GetDefaultConfig())
 }
 
-func save(v string, cfg *C.Config) error {
+func save(v string, cfg *Cfg.Config) error {
 	viper.Reset()
 	viper.SetConfigFile(opts.configFile)
 	viper.Set("version", v)
